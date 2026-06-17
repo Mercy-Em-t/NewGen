@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexus Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Quill.js for Rich Text -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    
+    <!-- SortableJS for Drag-and-Drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"> </script>
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -32,15 +43,89 @@
         .btn-secondary { background: #3498db; margin-top: 10px; padding: 8px 16px; }
         .btn-secondary:hover { background: #2980b9; }
         
-        /* Dynamic Array Styling */
-        .dynamic-item { border: 1px solid #eaeaea; padding: 15px; border-radius: 6px; margin-bottom: 15px; position: relative; background: #fafafa; }
+        input:focus, textarea:focus { border-color: #d0aa69; outline: none; }
+        
+        .char-counter { font-size: 0.75rem; color: #a0a0a0; text-align: right; display: block; margin-top: 4px; }
+        .char-counter.warning { color: #f39c12; }
+        .char-counter.danger { color: #e74c3c; }
+
+        /* Quill.js Dark Theme Overrides */
+        .ql-container { font-family: var(--font-sans); font-size: 0.9rem; background: #121315; color: #fff; border-color: #333 !important; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; }
+        .ql-toolbar { background: #1c1d1f; border-color: #333 !important; border-top-left-radius: 4px; border-top-right-radius: 4px; }
+        .ql-snow .ql-stroke { stroke: #a0a0a0; }
+        .ql-snow .ql-fill { fill: #a0a0a0; }
+        .ql-snow .ql-picker { color: #a0a0a0; }
+        .ql-editor { min-height: 100px; }
+
+        .dynamic-item { border: 1px solid #eaeaea; padding: 15px; padding-left: 45px; border-radius: 6px; margin-bottom: 15px; position: relative; background: #fafafa; }
         .remove-btn { position: absolute; top: 15px; right: 15px; background: #e74c3c; color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; }
         .remove-btn:hover { background: #c0392b; }
+        
+        .drag-handle { position: absolute; top: 15px; left: 15px; color: #a0a0a0; cursor: grab; font-size: 1.2rem; }
+        .drag-handle:active { cursor: grabbing; }
         
         #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 0.9rem; transition: visibility 0s, opacity 0.5s linear, bottom 0.5s ease-in-out; opacity: 0; }
         #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
         #toast.success { background-color: #27ae60; }
-        #toast.error { background-color: #e74c3c; }
+        .toast.error { background: #e74c3c; color: white; border-left: 4px solid #c0392b; }
+
+        .media-gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            background: #1c1d1f;
+            border: 1px solid #2a2b2d;
+            padding: 15px;
+            border-radius: 6px;
+            max-height: 220px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .media-thumb-card {
+            position: relative;
+            aspect-ratio: 16 / 10;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .media-thumb-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .media-thumb-card:hover {
+            transform: scale(1.03);
+            border-color: #d0aa69;
+        }
+        .media-thumb-card.selected {
+            border-color: #2ecc71;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+        }
+        .media-thumb-card .delete-asset-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .media-thumb-card:hover .delete-asset-btn {
+            display: flex;
+        }
+        .media-thumb-card .delete-asset-btn:hover {
+            background: #c0392b;
+        }
     </style>
 </head>
 <body>
@@ -60,30 +145,40 @@
         <form id="cms-form">
             <h3>1. Brand Info</h3>
             <div class="form-group">
-                <label for="brandName">Brand Name</label>
-                <input type="text" id="brandName" required pattern="[A-Za-z0-9]+" maxlength="15">
+                <label>Brand Name</label>
+                <input type="text" id="brandName" required maxlength="30">
             </div>
 
+            <!-- 2. Hero Section -->
             <h3>2. Hero Section</h3>
             <div class="form-group">
-                <label for="heroTagline">Tagline</label>
-                <input type="text" id="heroTagline" required maxlength="30">
+                <label>Tagline</label>
+                <input type="text" id="heroTagline" required maxlength="50">
             </div>
             <div class="form-group">
-                <label for="heroHeadline">Main Headline</label>
-                <input type="text" id="heroHeadline" required pattern="[A-Za-z0-9 .,!?]+" maxlength="60">
+                <label>Headline</label>
+                <input type="text" id="heroHeadline" required maxlength="100">
+            </div>
+            <div class="header-actions">
+                <select id="lang-select" style="padding: 5px; border-radius: 4px; background: #333; color: white; border: 1px solid #555;">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                </select>
+                <a href="#" class="btn btn-outline" id="live-site-link" target="_blank">Live Site</a>
+                <div class="menu-btn"><i class="fa-solid fa-ellipsis"></i></div>
             </div>
             <div class="form-group">
-                <label for="heroSubtext">Subtext</label>
-                <textarea id="heroSubtext" rows="3" required maxlength="200"></textarea>
+                <label>Hero Subtext</label>
+                <div id="heroSubtextEditor" style="height: 120px;"></div>
             </div>
             
             <!-- Handle Image Uploads -->
             <div class="form-group">
                 <label>Hero Background Image</label>
                 <input type="file" id="heroBgFile" accept="image/*">
+                <span class="help-text" id="heroBgStatus">Upload a new graphic asset, or pick one from your cloud library below:</span>
                 <input type="hidden" id="heroBgUrl">
-                <span class="help-text" id="heroBgStatus">Upload a new background image (optional). Or leave blank to keep current.</span>
+                <div class="media-gallery-grid" id="system-media-vault"></div>
             </div>
 
             <!-- Handle Dynamic Arrays -->
@@ -100,14 +195,25 @@
             <h3>5. Projects / Case Studies</h3>
             <div id="projects-container"></div>
             <button type="button" class="btn btn-secondary" id="add-project-btn">+ Add Project</button>
-            <br><br><hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0;"><br>
-
-            <button type="submit" class="btn" style="width: 100%;">Save & Update Website</button>
+            <br><br><hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0;">
+            
+            <!-- Handle Image Uploads -->
+            <div style="display: flex; gap: 15px; margin-top: 40px;">
+                <button type="button" id="save-draft-btn" class="btn btn-secondary" style="flex: 1;">Save Draft</button>
+                <button type="button" id="publish-live-btn" class="btn" style="flex: 1; background: #27ae60; border-color: #27ae60;">Publish Live</button>
+            </div>
+            <div style="margin-top: 15px; font-size: 0.8rem; color: #666; text-align: center; font-style: italic;" id="autosave-status">
+                System idle. Draft changes are monitored automatically.
+            </div>
         </form>
     </div>
 
     <script>
         // --- SECURE VERIFICATION ---
+        let heroQuill; // Global reference for Quill
+        let fullMatrix = null;
+        let currentLang = 'en';
+
         // Verify session immediately before revealing the UI or loading data
         fetch('/api/verify-session')
             .then(res => {
@@ -120,6 +226,35 @@
             .then(data => {
                 if (data && data.success) {
                     document.getElementById('main-admin').style.display = 'block';
+                    
+                    // Initialize Hero Quill Editor
+                    heroQuill = new Quill('#heroSubtextEditor', {
+                        theme: 'snow',
+                        modules: { toolbar: [['bold', 'italic', 'underline'], ['link']] }
+                    });
+
+                    // Initialize SortableJS
+                    Sortable.create(document.getElementById('services-container'), { handle: '.drag-handle', animation: 150 });
+                    Sortable.create(document.getElementById('stats-container'), { handle: '.drag-handle', animation: 150 });
+                    Sortable.create(document.getElementById('projects-container'), { handle: '.drag-handle', animation: 150 });
+
+                    // Initialize Character Counters
+                    document.querySelectorAll('input[maxlength]').forEach(input => {
+                        const counter = document.createElement('span');
+                        counter.className = 'char-counter';
+                        const max = input.getAttribute('maxlength');
+                        input.parentNode.appendChild(counter);
+
+                        const updateCounter = () => {
+                            const len = input.value.length;
+                            counter.textContent = `${len} / ${max}`;
+                            counter.className = 'char-counter ' + (len >= max ? 'danger' : len >= max * 0.8 ? 'warning' : '');
+                        };
+                        input.addEventListener('input', updateCounter);
+                        // Store the function so we can call it after data loads
+                        input.updateCounter = updateCounter;
+                    });
+
                     loadData();
                     // Load user ID for the Live Site button
                     fetch('/api/me')
@@ -133,66 +268,140 @@
             })
             .catch(() => window.location.href = '/login.html');
 
-        // --- LOGOUT LOGIC ---
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            fetch('/api/logout', { method: 'POST' })
-                .then(() => window.location.href = '/login.html');
-        });
-
-        let existingData = {};
-
-        // --- DATA LOADING & DYNAMIC FORM GENERATION ---
         function loadData() {
             fetch('/api/admin-data')
                 .then(res => res.json())
-                .then(data => {
-                    existingData = data;
-                    if(data.brand) document.getElementById('brandName').value = data.brand.name;
-                    if(data.hero) {
-                        document.getElementById('heroTagline').value = data.hero.tagline;
-                        document.getElementById('heroHeadline').value = data.hero.headline.replace(/<[^>]*>?/gm, '');
-                        document.getElementById('heroSubtext').value = data.hero.subtext;
-                        document.getElementById('heroBgUrl').value = data.hero.bgImage;
-                    }
-                    if(data.servicesSection && data.servicesSection.items) {
-                        data.servicesSection.items.forEach(service => addServiceToForm(service));
-                    }
-                    if(data.stats) {
-                        data.stats.forEach(stat => addStatToForm(stat));
-                    }
-                    if(data.projectsSection && data.projectsSection.items) {
-                        data.projectsSection.items.forEach(proj => addProjectToForm(proj));
-                    }
+                .then(matrix => {
+                    fullMatrix = matrix;
+                    populateForm(fullMatrix.draft[currentLang]);
                 });
         }
+
+        function populateForm(data) {
+            existingData = data;
+            
+            document.getElementById('brandName').value = data.brand.name || '';
+            document.getElementById('heroTagline').value = data.hero.tagline || '';
+            document.getElementById('heroHeadline').value = data.hero.headline || '';
+            heroQuill.root.innerHTML = data.hero.subtext || '';
+            document.getElementById('heroBgUrl').value = data.hero.bgImage || '';
+
+            // Trigger character counters to update visually
+            document.querySelectorAll('input[maxlength]').forEach(input => {
+                if(input.updateCounter) input.updateCounter();
+            });
+
+            document.getElementById('services-container').innerHTML = '';
+            document.getElementById('stats-container').innerHTML = '';
+            document.getElementById('projects-container').innerHTML = '';
+
+            if(data.servicesSection && data.servicesSection.items) {
+                data.servicesSection.items.forEach(service => addServiceToForm(service));
+            }
+            if(data.stats) {
+                data.stats.forEach(stat => addStatToForm(stat));
+            }
+            if(data.projectsSection && data.projectsSection.items) {
+                data.projectsSection.items.forEach(proj => addProjectToForm(proj));
+            }
+            
+            refreshMediaVault();
+        }
+
+        document.getElementById('lang-select').addEventListener('change', (e) => {
+            fullMatrix.draft[currentLang] = collectFormData();
+            currentLang = e.target.value;
+            populateForm(fullMatrix.draft[currentLang]);
+        });
 
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
-            toast.className = `show ${type}`;
+            toast.className = 'show ' + type;
             setTimeout(() => { toast.className = toast.className.replace('show', ''); }, 3000);
+        }
+
+        // FUNCTION: Load asset bank data from server storage and build library UI
+        function refreshMediaVault() {
+            const vaultContainer = document.getElementById('system-media-vault');
+            if (!vaultContainer) return;
+
+            fetch('/api/media')
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) return;
+                    
+                    vaultContainer.innerHTML = ''; // Clear prior render states
+                    
+                    if (data.media.length === 0) {
+                        vaultContainer.innerHTML = `<p style="grid-column: 1/-1; color: #555; font-size: 0.8rem; text-align: center; margin: 20px 0;">No system files found. Upload your first asset above.</p>`;
+                        return;
+                    }
+
+                    const currentActiveUrl = document.getElementById('heroBgUrl').value;
+
+                    data.media.forEach(url => {
+                        const card = document.createElement('div');
+                        card.className = `media-thumb-card ${currentActiveUrl === url ? 'selected' : ''}`;
+                        card.innerHTML = `
+                            <img src="${url}" alt="Server Asset">
+                            <button type="button" class="delete-asset-btn" title="Archive Asset"><i class="fa-solid fa-trash"></i></button>
+                        `;
+                        
+                        card.addEventListener('click', function() {
+                            document.querySelectorAll('.media-thumb-card').forEach(c => c.classList.remove('selected'));
+                            card.classList.add('selected');
+                            
+                            document.getElementById('heroBgUrl').value = url;
+                            showToast('Existing asset linked from cloud library!', 'success');
+                        });
+
+                        const deleteBtn = card.querySelector('.delete-asset-btn');
+                        deleteBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            if(confirm("Are you sure you want to remove this asset?")) {
+                                fetch('/api/delete-media', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ url: url })
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if(data.success) {
+                                        showToast('Asset archived successfully!', 'success');
+                                        refreshMediaVault();
+                                        if (document.getElementById('heroBgUrl').value === url) {
+                                            document.getElementById('heroBgUrl').value = '';
+                                        }
+                                    } else {
+                                        showToast('Failed to archive asset.', 'error');
+                                    }
+                                });
+                            }
+                        });
+
+                        vaultContainer.appendChild(card);
+                    });
+                });
         }
 
         function addServiceToForm(service = { icon: 'fa-solid fa-star', title: '', desc: '' }) {
             const container = document.getElementById('services-container');
             const div = document.createElement('div');
             div.className = 'dynamic-item';
+            const editorId = 'svcDesc_' + Math.random().toString(36).substr(2, 9);
+            
             div.innerHTML = `
+                <i class="fa-solid fa-grip-vertical drag-handle"></i>
                 <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
-                <div class="form-group">
-                    <label>Icon Class (FontAwesome)</label>
-                    <input type="text" class="svc-icon" value="${service.icon}" required>
-                </div>
-                <div class="form-group">
-                    <label>Service Title</label>
-                    <input type="text" class="svc-title" value="${service.title}" required maxlength="30">
-                </div>
-                <div class="form-group">
-                    <label>Service Description</label>
-                    <textarea class="svc-desc" rows="2" required maxlength="100">${service.desc}</textarea>
-                </div>
+                <div class="form-group"><label>Icon (FontAwesome class)</label><input type="text" class="svc-icon" value="${service.icon}" required></div>
+                <div class="form-group"><label>Title</label><input type="text" class="svc-title" value="${service.title}" required maxlength="40"></div>
+                <div class="form-group"><label>Description</label><div id="${editorId}" class="svc-desc" style="height: 100px;">${service.desc}</div></div>
             `;
             container.appendChild(div);
+            
+            const q = new Quill(`#${editorId}`, { theme: 'snow', modules: { toolbar: [['bold', 'italic']] } });
+            div.quillInstance = q;
         }
 
         document.getElementById('add-service-btn').addEventListener('click', () => addServiceToForm());
@@ -202,10 +411,11 @@
             const div = document.createElement('div');
             div.className = 'dynamic-item';
             div.innerHTML = `
+                <i class="fa-solid fa-grip-vertical drag-handle"></i>
                 <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
                 <div class="form-group"><label>Icon (FontAwesome)</label><input type="text" class="stat-icon" value="${stat.icon}" required></div>
-                <div class="form-group"><label>Value</label><input type="text" class="stat-val" value="${stat.value}" required></div>
-                <div class="form-group"><label>Label</label><input type="text" class="stat-label" value="${stat.label}" required></div>
+                <div class="form-group"><label>Value</label><input type="text" class="stat-val" value="${stat.value}" required maxlength="10"></div>
+                <div class="form-group"><label>Label</label><input type="text" class="stat-label" value="${stat.label}" required maxlength="30"></div>
             `;
             container.appendChild(div);
         }
@@ -219,6 +429,7 @@
             const fileId = 'projFile_' + Math.random().toString(36).substr(2, 9);
             
             div.innerHTML = `
+                <i class="fa-solid fa-grip-vertical drag-handle"></i>
                 <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
                 <div class="form-group">
                     <label>Project Image Upload</label>
@@ -267,36 +478,32 @@
             const formData = new FormData();
             formData.append('image', file);
 
-            // Notice: We removed the 'Authorization' header because HttpOnly cookies are automatically sent!
             fetch('/api/upload-image', {
                 method: 'POST',
                 body: formData
             })
-            .then(res => {
-                if(res.status === 401 || res.status === 403) window.location.href = '/login.html';
-                return res.json();
-            })
+            .then(res => res.json())
             .then(data => {
-                if (data.success) {
+                if(data.success) {
                     document.getElementById('heroBgUrl').value = data.imageUrl;
-                    document.getElementById('heroBgStatus').textContent = `Uploaded successfully! Path: ${data.imageUrl}`;
-                    document.getElementById('heroBgStatus').style.color = "green";
+                    document.getElementById('heroBgStatus').textContent = 'Upload complete! Image saved to cloud.';
+                    document.getElementById('heroBgStatus').style.color = '#2ecc71';
+                    showToast('Image uploaded and linked successfully!', 'success');
+                    refreshMediaVault();
                 } else {
-                    document.getElementById('heroBgStatus').textContent = "Upload failed.";
-                    document.getElementById('heroBgStatus').style.color = "red";
+                    document.getElementById('heroBgStatus').textContent = 'Upload failed: ' + data.message;
+                    document.getElementById('heroBgStatus').style.color = '#e74c3c';
                 }
             })
             .catch(err => console.error(err));
         });
 
         // --- SUBMISSION LOGIC ---
-        document.getElementById('cms-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-
+        function collectFormData() {
             const serviceItems = Array.from(document.querySelectorAll('#services-container .dynamic-item')).map(item => ({
                 icon: item.querySelector('.svc-icon').value,
                 title: item.querySelector('.svc-title').value,
-                desc: item.querySelector('.svc-desc').value
+                desc: item.quillInstance.root.innerHTML
             }));
 
             const statItems = Array.from(document.querySelectorAll('#stats-container .dynamic-item')).map(item => ({
@@ -312,7 +519,7 @@
                 class: item.querySelector('.proj-class').value
             }));
 
-            const newData = {
+            return {
                 ...existingData,
                 brand: {
                     ...existingData.brand,
@@ -322,7 +529,7 @@
                     ...existingData.hero,
                     tagline: document.getElementById('heroTagline').value,
                     headline: document.getElementById('heroHeadline').value,
-                    subtext: document.getElementById('heroSubtext').value,
+                    subtext: heroQuill.root.innerHTML,
                     bgImage: document.getElementById('heroBgUrl').value
                 },
                 servicesSection: {
@@ -335,13 +542,16 @@
                     items: projectItems
                 }
             };
-            
-            showToast('Saving...', 'success');
+        }
 
+        function submitForm(mode) {
+            const payload = collectFormData();
+            fullMatrix.draft[currentLang] = payload; 
+            
             fetch('/api/save-data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newData)
+                body: JSON.stringify({ mode: mode, lang: currentLang, payload: payload })
             })
             .then(res => {
                 if(res.status === 401 || res.status === 403) window.location.href = '/login.html';
@@ -358,7 +568,64 @@
                 console.error('Error saving data:', error);
                 showToast('Failed to connect to the server.', 'error');
             });
-        });
+            });
+        }
+
+        document.getElementById('save-draft-btn').addEventListener('click', () => submitForm('draft'));
+        document.getElementById('publish-live-btn').addEventListener('click', () => submitForm('publish'));
+
+        // --- BACKGROUND AUTO-SAVE ENGINE ---
+        let lastSavedPayloadString = "";
+
+        function configurationHasChanged(currentPayload) {
+            const currentString = JSON.stringify(currentPayload);
+            if (currentString !== lastSavedPayloadString) {
+                lastSavedPayloadString = currentString;
+                return true;
+            }
+            return false;
+        }
+
+        function triggerBackgroundAutoSave() {
+            const currentPayload = collectFormData();
+            const statusText = document.getElementById('autosave-status');
+
+            if (!configurationHasChanged(currentPayload)) return;
+
+            statusText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Syncing staging draft automatically...`;
+            statusText.style.color = '#d0aa69';
+
+            fullMatrix.draft[currentLang] = currentPayload;
+            
+            fetch('/api/save-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: 'draft', lang: currentLang, payload: currentPayload })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const now = new Date();
+                    const timeString = now.toTimeString().split(' ')[0];
+                    statusText.innerHTML = `<i class="fa-solid fa-cloud"></i> Draft auto-saved at ${timeString}`;
+                    statusText.style.color = '#2ecc71';
+                } else {
+                    statusText.textContent = "Background sync suspended: Connection lost.";
+                    statusText.style.color = '#e74c3c';
+                }
+            })
+            .catch(() => {
+                statusText.textContent = "Network error: Auto-save paused.";
+                statusText.style.color = '#e74c3c';
+            });
+        }
+
+        // Start checking loop 3 seconds after page loads
+        setTimeout(() => {
+            lastSavedPayloadString = JSON.stringify(collectFormData());
+            setInterval(triggerBackgroundAutoSave, 30000);
+        }, 3000);
+
     </script>
 </body>
 </html>

@@ -628,7 +628,10 @@
         <div class="logo logo-container"></div>
         <nav><ul id="nav-links"></ul></nav>
         <div class="header-actions">
-            <a href="#" class="btn btn-outline" id="header-action-btn">Get In Touch</a>
+            <a href="#" id="lang-en-btn" style="color: white; font-size: 0.8rem; font-weight: bold;">EN</a>
+            <span style="color: #555;">|</span>
+            <a href="#" id="lang-es-btn" style="color: white; font-size: 0.8rem; font-weight: bold;">ES</a>
+            <a href="#" class="btn btn-outline" id="header-action-btn" style="margin-left: 15px;">Get In Touch</a>
             <div class="menu-btn"><i class="fa-solid fa-ellipsis"></i></div>
         </div>
     </header>
@@ -696,7 +699,12 @@
         // Fetch the external JSON file or Supabase data
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('user_id');
-        const fetchUrl = userId ? `/api/data?user_id=${userId}` : 'data.json';
+        const lang = urlParams.get('lang') || 'en';
+        
+        document.getElementById('lang-en-btn').href = `?lang=en${userId ? '&user_id='+userId : ''}`;
+        document.getElementById('lang-es-btn').href = `?lang=es${userId ? '&user_id='+userId : ''}`;
+
+        const fetchUrl = userId ? `/api/data?user_id=${userId}&lang=${lang}` : 'data.json';
         
         fetch(fetchUrl)
             .then(response => response.json())
@@ -705,7 +713,7 @@
                 // 1. Inject Hero Content
                 document.getElementById('hero-tag').textContent = data.hero.tagline;
                 document.getElementById('hero-head').innerHTML = data.hero.headline;
-                document.getElementById('hero-sub').textContent = data.hero.subtext;
+                document.getElementById('hero-sub').innerHTML = data.hero.subtext;
                 
                 // Fix button text while keeping the icon
                 const btn = document.getElementById('hero-btn');
@@ -809,7 +817,7 @@
                             <div class="service-card">
                                 <i class="${item.icon}"></i>
                                 <h4>${item.title}</h4>
-                                <p>${item.desc}</p>
+                                <div>${item.desc}</div>
                             </div>
                         `;
                     });
