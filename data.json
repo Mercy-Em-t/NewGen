@@ -1,0 +1,205 @@
+{
+  "brand": {
+    "icon": "N",
+    "name": "NEXUS",
+    "sub": "TECH & OPERATIONS"
+  },
+  "nav": [
+    { "text": "Home", "active": true },
+    { "text": "About", "active": false },
+    { "text": "Services", "active": false },
+    { "text": "Projects", "active": false },
+    { "text": "Insights", "active": false },
+    { "text": "Contact", "active": false }
+  ],
+  "headerAction": "Get In Touch",
+  "hero": {
+    "tagline": "Enterprise Solutions",
+    "headline": "Scaling Retail.<br><span class=\"italic-accent\">Optimizing</span> Commerce.",
+    "subtext": "We build data-driven operations and integrated tech stacks that power modern retail and global supply chains.",
+    "buttonText": "View Solutions",
+    "bgImage": "https://images.unsplash.com/photo-1553413077-190dd305871c?q=80&w=2000&auto=format&fit=crop"
+  },
+  "stats": [
+    {
+      "icon": "fa-solid fa-server",
+      "value": "99.9%",
+      "label": "System Uptime"
+    },
+    {
+      "icon": "fa-solid fa-chart-line",
+      "value": "$2B+",
+      "label": "Transactions Processed"
+    },
+    {
+      "icon": "fa-solid fa-globe",
+      "value": "40+",
+      "label": "Global Markets"
+    }
+  ],
+  "projectsSection": {
+    "tag": "Featured Projects",
+    "title": "Spaces<br>That Define<br>Excellence",
+    "buttonText": "View All Projects <i class=\"fa-solid fa-arrow-right\"></i>",
+    "items": [
+      {
+        "title": "Horizon Residence",
+        "location": "Los Angeles, CA",
+        "image": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1170&auto=format&fit=crop",
+        "class": "card-large-left"
+      },
+      {
+        "title": "Aurora Office Tower",
+        "location": "New York, NY",
+        "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1170&auto=format&fit=crop",
+        "class": "card-top-mid"
+      },
+      {
+        "title": "Edgewood Villa",
+        "location": "Austin, TX",
+        "image": "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1170&auto=format&fit=crop",
+        "class": "card-bot-mid"
+      },
+      {
+        "title": "Maple Street Residences",
+        "location": "Seattle, WA",
+        "image": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=1035&auto=format&fit=crop",
+        "class": "card-large-right"
+      }
+    ]
+  },
+  "servicesSection": {
+    "tag": "Our Services",
+    "title": "End-to-End<br>Solutions",
+    "text": "Integrated expertise across every stage of design and construction.",
+    "buttonText": "Explore Services <i class=\"fa-solid fa-arrow-right\"></i>",
+    "items": [
+      {
+        "icon": "fa-solid fa-compass-drafting",
+        "title": "Architecture",
+        "desc": "Concept-driven designs that blend creativity and functionality."
+      },
+      {
+        "icon": "fa-solid fa-house-chimney",
+        "title": "Residential Construction",
+        "desc": "Bespoke homes built with precision and care."
+      },
+      {
+        "icon": "fa-solid fa-city",
+        "title": "Commercial Builds",
+        "desc": "High-performance spaces for modern businesses."
+      },
+      {
+        "icon": "fa-solid fa-couch",
+        "title": "Interiors",
+        "desc": "Beautiful, functional interiors tailored to your lifestyle."
+      },
+      {
+        "icon": "fa-solid fa-clipboard-list",
+        "title": "Project Management",
+        "desc": "Seamless execution from concept to completion."
+      }
+    ]
+  },
+  "processSection": {
+    "tag": "Our Process",
+    "title": "A Seamless Journey<br>From Vision to Reality",
+    "buttonText": "How We Work",
+    "items": [
+      {
+        "number": "01",
+        "title": "Discover",
+        "desc": "Understanding your vision, goals, and requirements.",
+        "highlight": false
+      },
+      {
+        "number": "02",
+        "title": "Design",
+        "desc": "Crafting intelligent designs that inspire and perform.",
+        "highlight": false
+      },
+      {
+        "number": "03",
+        "title": "Build",
+        "desc": "Expert construction with quality and precision.",
+        "highlight": false
+      },
+      {
+        "number": "04",
+        "title": "Deliver",
+        "desc": "On-time delivery with attention to every detail.",
+        "highlight": false
+      },
+      {
+        "number": "05",
+        "title": "Beyond",
+        "desc": "Ongoing support to ensure lasting satisfaction.",
+        "highlight": true
+      }
+    ]
+  },
+  "insightsSection": {
+    "tag": "Insights",
+    "title": "Ideas. Trends.<br>Inspiration.",
+    "buttonText": "View All Articles <i class=\"fa-solid fa-arrow-right\"></i>",
+    "items": [
+      {
+        "date": "May 12, 2024",
+        "title": "The Future of Sustainable Architecture",
+        "image": "https://images.unsplash.com/photo-1518780664697-55e3ad937233?q=80&w=1065&auto=format&fit=crop"
+      },
+      {
+        "date": "Apr 28, 2024",
+        "title": "Designing Homes That Adapt to You",
+        "image": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1153&auto=format&fit=crop"
+      },
+      {
+        "date": "Apr 10, 2024",
+        "title": "Smart Materials for a Better Tomorrow",
+        "image": "https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1169&auto=format&fit=crop"
+      }
+    ]
+  },
+  "footer": {
+    "ctaTitle": "Let's Build<br>Something<br>Extraordinary",
+    "ctaButton": "Start Your Project <i class=\"fa-solid fa-arrow-right\"></i>",
+    "contact": [
+      {
+        "icon": "fa-regular fa-envelope",
+        "text": "hello@nexus.com"
+      },
+      {
+        "icon": "fa-solid fa-phone",
+        "text": "+1 (212) 555-0198"
+      },
+      {
+        "icon": "fa-solid fa-location-dot",
+        "text": "123 Tech Avenue,<br>San Francisco, CA 94107"
+      }
+    ],
+    "social": [
+      {
+        "icon": "fa-brands fa-linkedin-in",
+        "link": "#"
+      },
+      {
+        "icon": "fa-brands fa-instagram",
+        "link": "#"
+      },
+      {
+        "icon": "fa-brands fa-pinterest-p",
+        "link": "#"
+      },
+      {
+        "icon": "fa-brands fa-twitter",
+        "link": "#"
+      }
+    ],
+    "brandText": "We build data-driven operations and integrated tech stacks that power modern retail and global supply chains.",
+    "copyright": "&copy; 2026 NEXUS. All rights reserved.",
+    "links": [
+      "Privacy Policy",
+      "Terms of Service"
+    ]
+  }
+}

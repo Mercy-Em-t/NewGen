@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus CMS Login</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #121315; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: #1c1d1f; padding: 40px; border-radius: 8px; width: 100%; max-width: 380px; border: 1px solid #2a2b2d; text-align: center; }
+        .logo { font-size: 1.8rem; letter-spacing: 2px; margin-bottom: 30px; color: #d0aa69; font-family: 'Playfair Display', serif; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; color: #a0a0a0; }
+        input { width: 100%; padding: 12px; background: #121315; border: 1px solid #333; border-radius: 4px; color: #fff; box-sizing: border-box; }
+        input:focus { border-color: #d0aa69; outline: none; }
+        .btn { background: #d0aa69; color: #121315; border: none; padding: 14px; width: 100%; border-radius: 4px; cursor: pointer; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
+        .btn:hover { background: #b89254; }
+        #error-msg { color: #e74c3c; font-size: 0.8rem; margin-top: 15px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="logo">NEXUS</div>
+        <form id="login-form">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="username" required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" class="btn">Login</button>
+            <button type="button" class="btn" id="register-btn" style="background: transparent; border: 1px solid #d0aa69; color: #d0aa69; margin-top: 10px;">Register</button>
+            <div id="error-msg"></div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const errorMsg = document.getElementById('error-msg');
+            errorMsg.style.display = 'none';
+
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/admin.html'; // Redirect upon successful auth
+                } else {
+                    errorMsg.textContent = data.message;
+                    errorMsg.style.display = 'block';
+                }
+            })
+            .catch(() => {
+                errorMsg.textContent = "Server communication failure.";
+                errorMsg.style.display = 'block';
+            });
+        });
+
+        document.getElementById('register-btn').addEventListener('click', function() {
+            const errorMsg = document.getElementById('error-msg');
+            errorMsg.style.display = 'none';
+
+            fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                errorMsg.textContent = data.message;
+                errorMsg.style.display = 'block';
+                if(data.success) {
+                    errorMsg.style.color = "green";
+                } else {
+                    errorMsg.style.color = "#e74c3c";
+                }
+            })
+            .catch(() => {
+                errorMsg.textContent = "Server communication failure.";
+                errorMsg.style.display = 'block';
+                errorMsg.style.color = "#e74c3c";
+            });
+        });
+    </script>
+</body>
+</html>

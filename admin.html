@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Admin Panel</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .admin-card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h2 { margin-top: 0; color: #121315; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; }
+        input[type="text"], input[type="password"], textarea {
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; box-sizing: border-box;
+        }
+        input:invalid, textarea:invalid { border-color: #e74c3c; background-color: #fdf0ed; }
+        .help-text { font-size: 0.75rem; color: #777; margin-top: 5px; display: block; }
+        .btn { background: #121315; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .btn:hover { background: #333; }
+        .btn-secondary { background: #3498db; margin-top: 10px; padding: 8px 16px; }
+        .btn-secondary:hover { background: #2980b9; }
+        
+        /* Dynamic Array Styling */
+        .dynamic-item { border: 1px solid #eaeaea; padding: 15px; border-radius: 6px; margin-bottom: 15px; position: relative; background: #fafafa; }
+        .remove-btn { position: absolute; top: 15px; right: 15px; background: #e74c3c; color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 4px; font-size: 0.8rem; }
+        .remove-btn:hover { background: #c0392b; }
+        
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 0.9rem; transition: visibility 0s, opacity 0.5s linear, bottom 0.5s ease-in-out; opacity: 0; }
+        #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+        #toast.success { background-color: #27ae60; }
+        #toast.error { background-color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div id="toast">Message</div>
+
+    <!-- Main Admin Panel (Hidden until session verified) -->
+    <div class="admin-card" id="main-admin" style="display:none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>Website Content Generator</h2>
+            <div>
+                <a id="live-site-link" href="#" target="_blank" class="btn btn-secondary" style="background:#27ae60; margin-top:0; text-decoration: none; display: inline-block; margin-right: 10px;">View Live Site</a>
+                <button class="btn btn-secondary" id="logout-btn" style="background:#e74c3c; margin-top:0;">Logout</button>
+            </div>
+        </div>
+        <p style="margin-bottom: 30px; font-size: 0.9rem; color: #555;">Update your site's text, images, and services. Changes save directly to your server.</p>
+
+        <form id="cms-form">
+            <h3>1. Brand Info</h3>
+            <div class="form-group">
+                <label for="brandName">Brand Name</label>
+                <input type="text" id="brandName" required pattern="[A-Za-z0-9]+" maxlength="15">
+            </div>
+
+            <h3>2. Hero Section</h3>
+            <div class="form-group">
+                <label for="heroTagline">Tagline</label>
+                <input type="text" id="heroTagline" required maxlength="30">
+            </div>
+            <div class="form-group">
+                <label for="heroHeadline">Main Headline</label>
+                <input type="text" id="heroHeadline" required pattern="[A-Za-z0-9 .,!?]+" maxlength="60">
+            </div>
+            <div class="form-group">
+                <label for="heroSubtext">Subtext</label>
+                <textarea id="heroSubtext" rows="3" required maxlength="200"></textarea>
+            </div>
+            
+            <!-- Handle Image Uploads -->
+            <div class="form-group">
+                <label>Hero Background Image</label>
+                <input type="file" id="heroBgFile" accept="image/*">
+                <input type="hidden" id="heroBgUrl">
+                <span class="help-text" id="heroBgStatus">Upload a new background image (optional). Or leave blank to keep current.</span>
+            </div>
+
+            <!-- Handle Dynamic Arrays -->
+            <h3>3. Services (Dynamic Array)</h3>
+            <div id="services-container"></div>
+            <button type="button" class="btn btn-secondary" id="add-service-btn">+ Add Service</button>
+            <br><br>
+
+            <h3>4. Stats Bar</h3>
+            <div id="stats-container"></div>
+            <button type="button" class="btn btn-secondary" id="add-stat-btn">+ Add Stat</button>
+            <br><br>
+
+            <h3>5. Projects / Case Studies</h3>
+            <div id="projects-container"></div>
+            <button type="button" class="btn btn-secondary" id="add-project-btn">+ Add Project</button>
+            <br><br><hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0;"><br>
+
+            <button type="submit" class="btn" style="width: 100%;">Save & Update Website</button>
+        </form>
+    </div>
+
+    <script>
+        // --- SECURE VERIFICATION ---
+        // Verify session immediately before revealing the UI or loading data
+        fetch('/api/verify-session')
+            .then(res => {
+                if (!res.ok) {
+                    window.location.href = '/login.html'; // Redirect to login
+                } else {
+                    return res.json();
+                }
+            })
+            .then(data => {
+                if (data && data.success) {
+                    document.getElementById('main-admin').style.display = 'block';
+                    loadData();
+                    // Load user ID for the Live Site button
+                    fetch('/api/me')
+                        .then(res => res.json())
+                        .then(userData => {
+                            if(userData.user_id) {
+                                document.getElementById('live-site-link').href = `/INDEX.HTML?user_id=${userData.user_id}`;
+                            }
+                        });
+                }
+            })
+            .catch(() => window.location.href = '/login.html');
+
+        // --- LOGOUT LOGIC ---
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            fetch('/api/logout', { method: 'POST' })
+                .then(() => window.location.href = '/login.html');
+        });
+
+        let existingData = {};
+
+        // --- DATA LOADING & DYNAMIC FORM GENERATION ---
+        function loadData() {
+            fetch('/api/admin-data')
+                .then(res => res.json())
+                .then(data => {
+                    existingData = data;
+                    if(data.brand) document.getElementById('brandName').value = data.brand.name;
+                    if(data.hero) {
+                        document.getElementById('heroTagline').value = data.hero.tagline;
+                        document.getElementById('heroHeadline').value = data.hero.headline.replace(/<[^>]*>?/gm, '');
+                        document.getElementById('heroSubtext').value = data.hero.subtext;
+                        document.getElementById('heroBgUrl').value = data.hero.bgImage;
+                    }
+                    if(data.servicesSection && data.servicesSection.items) {
+                        data.servicesSection.items.forEach(service => addServiceToForm(service));
+                    }
+                    if(data.stats) {
+                        data.stats.forEach(stat => addStatToForm(stat));
+                    }
+                    if(data.projectsSection && data.projectsSection.items) {
+                        data.projectsSection.items.forEach(proj => addProjectToForm(proj));
+                    }
+                });
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `show ${type}`;
+            setTimeout(() => { toast.className = toast.className.replace('show', ''); }, 3000);
+        }
+
+        function addServiceToForm(service = { icon: 'fa-solid fa-star', title: '', desc: '' }) {
+            const container = document.getElementById('services-container');
+            const div = document.createElement('div');
+            div.className = 'dynamic-item';
+            div.innerHTML = `
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+                <div class="form-group">
+                    <label>Icon Class (FontAwesome)</label>
+                    <input type="text" class="svc-icon" value="${service.icon}" required>
+                </div>
+                <div class="form-group">
+                    <label>Service Title</label>
+                    <input type="text" class="svc-title" value="${service.title}" required maxlength="30">
+                </div>
+                <div class="form-group">
+                    <label>Service Description</label>
+                    <textarea class="svc-desc" rows="2" required maxlength="100">${service.desc}</textarea>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        document.getElementById('add-service-btn').addEventListener('click', () => addServiceToForm());
+
+        function addStatToForm(stat = { icon: 'fa-solid fa-chart-line', value: '', label: '' }) {
+            const container = document.getElementById('stats-container');
+            const div = document.createElement('div');
+            div.className = 'dynamic-item';
+            div.innerHTML = `
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+                <div class="form-group"><label>Icon (FontAwesome)</label><input type="text" class="stat-icon" value="${stat.icon}" required></div>
+                <div class="form-group"><label>Value</label><input type="text" class="stat-val" value="${stat.value}" required></div>
+                <div class="form-group"><label>Label</label><input type="text" class="stat-label" value="${stat.label}" required></div>
+            `;
+            container.appendChild(div);
+        }
+        document.getElementById('add-stat-btn').addEventListener('click', () => addStatToForm());
+
+        function addProjectToForm(proj = { image: '', title: '', location: '', class: 'card-bot-mid' }) {
+            const container = document.getElementById('projects-container');
+            const div = document.createElement('div');
+            div.className = 'dynamic-item';
+            
+            const fileId = 'projFile_' + Math.random().toString(36).substr(2, 9);
+            
+            div.innerHTML = `
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+                <div class="form-group">
+                    <label>Project Image Upload</label>
+                    <input type="file" id="${fileId}" accept="image/*">
+                    <input type="hidden" class="proj-img" value="${proj.image}">
+                    <span class="help-text">Upload an image for this project.</span>
+                </div>
+                <div class="form-group"><label>Title</label><input type="text" class="proj-title" value="${proj.title}" required></div>
+                <div class="form-group"><label>Location</label><input type="text" class="proj-location" value="${proj.location}" required></div>
+                <div class="form-group"><label>Layout Class (card-large-left, card-top-mid, card-bot-mid, card-large-right)</label><input type="text" class="proj-class" value="${proj.class}" required></div>
+            `;
+            container.appendChild(div);
+
+            document.getElementById(fileId).addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const statusSpan = div.querySelector('.help-text');
+                const hiddenInput = div.querySelector('.proj-img');
+                
+                statusSpan.textContent = "Uploading...";
+                const formData = new FormData();
+                formData.append('image', file);
+
+                fetch('/api/upload-image', { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        hiddenInput.value = data.imageUrl;
+                        statusSpan.textContent = "Uploaded successfully!";
+                        statusSpan.style.color = "green";
+                    } else {
+                        statusSpan.textContent = "Upload failed.";
+                        statusSpan.style.color = "red";
+                    }
+                });
+            });
+        }
+        document.getElementById('add-project-btn').addEventListener('click', () => addProjectToForm());
+
+        // --- IMAGE UPLOAD LOGIC ---
+        document.getElementById('heroBgFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            document.getElementById('heroBgStatus').textContent = "Uploading...";
+            const formData = new FormData();
+            formData.append('image', file);
+
+            // Notice: We removed the 'Authorization' header because HttpOnly cookies are automatically sent!
+            fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => {
+                if(res.status === 401 || res.status === 403) window.location.href = '/login.html';
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('heroBgUrl').value = data.imageUrl;
+                    document.getElementById('heroBgStatus').textContent = `Uploaded successfully! Path: ${data.imageUrl}`;
+                    document.getElementById('heroBgStatus').style.color = "green";
+                } else {
+                    document.getElementById('heroBgStatus').textContent = "Upload failed.";
+                    document.getElementById('heroBgStatus').style.color = "red";
+                }
+            })
+            .catch(err => console.error(err));
+        });
+
+        // --- SUBMISSION LOGIC ---
+        document.getElementById('cms-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const serviceItems = Array.from(document.querySelectorAll('#services-container .dynamic-item')).map(item => ({
+                icon: item.querySelector('.svc-icon').value,
+                title: item.querySelector('.svc-title').value,
+                desc: item.querySelector('.svc-desc').value
+            }));
+
+            const statItems = Array.from(document.querySelectorAll('#stats-container .dynamic-item')).map(item => ({
+                icon: item.querySelector('.stat-icon').value,
+                value: item.querySelector('.stat-val').value,
+                label: item.querySelector('.stat-label').value
+            }));
+
+            const projectItems = Array.from(document.querySelectorAll('#projects-container .dynamic-item')).map(item => ({
+                image: item.querySelector('.proj-img').value,
+                title: item.querySelector('.proj-title').value,
+                location: item.querySelector('.proj-location').value,
+                class: item.querySelector('.proj-class').value
+            }));
+
+            const newData = {
+                ...existingData,
+                brand: {
+                    ...existingData.brand,
+                    name: document.getElementById('brandName').value
+                },
+                hero: {
+                    ...existingData.hero,
+                    tagline: document.getElementById('heroTagline').value,
+                    headline: document.getElementById('heroHeadline').value,
+                    subtext: document.getElementById('heroSubtext').value,
+                    bgImage: document.getElementById('heroBgUrl').value
+                },
+                servicesSection: {
+                    ...existingData.servicesSection,
+                    items: serviceItems
+                },
+                stats: statItems,
+                projectsSection: {
+                    ...existingData.projectsSection,
+                    items: projectItems
+                }
+            };
+            
+            showToast('Saving...', 'success');
+
+            fetch('/api/save-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newData)
+            })
+            .then(res => {
+                if(res.status === 401 || res.status === 403) window.location.href = '/login.html';
+                return res.json();
+            })
+            .then(response => {
+                if(response.success) {
+                    showToast('Website updated instantly!', 'success');
+                } else {
+                    showToast('Server error: ' + response.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving data:', error);
+                showToast('Failed to connect to the server.', 'error');
+            });
+        });
+    </script>
+</body>
+</html>
