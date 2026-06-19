@@ -886,7 +886,7 @@
                         let html = `
                             <div class="form-card" style="background: var(--surface-light); border: 1px solid var(--border); border-radius: 8px; padding: 30px; margin-bottom: 40px;">
                                 <h3 style="margin-bottom: 20px; font-size: 1.5rem;">${form.title}</h3>
-                                <form id="dynamic-form-${form.id}" onsubmit="submitDynamicForm(event, '${form.id}')">
+                                <form id="dynamic-form-${form.id}" onsubmit="submitDynamicForm(event, '${form.id}', '${data.brand?.formKey || ''}')">
                         `;
                         
                         form.fields.forEach(field => {
@@ -994,7 +994,7 @@
         }
 
         // Form Submission Logic
-        window.submitDynamicForm = async function(e, formId) {
+        window.submitDynamicForm = async function(e, formId, formKey) {
             e.preventDefault();
             const formObj = document.getElementById(`dynamic-form-${formId}`);
             const msgDiv = document.getElementById(`form-msg-${formId}`);
@@ -1008,7 +1008,7 @@
             msgDiv.textContent = 'Submitting...';
             
             try {
-                const targetUrl = userId ? `/api/submit-form/${formId}?user_id=${userId}&lang=${lang}` : '/api/submit-form/' + formId;
+                const targetUrl = formKey ? `/api/submit-form/${formId}?key=${formKey}&lang=${lang}` : `/api/submit-form/${formId}?lang=${lang}`;
                 const response = await fetch(targetUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
